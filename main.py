@@ -3,6 +3,7 @@
 """
 
 
+import os
 import wx
 from tts import run
 
@@ -72,31 +73,82 @@ class View(wx.Frame):
         wx.Frame.__init__(self, parent, title="Main View", size=size)
 
 
-        panel = wx.Panel(self)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        
-        
-        self.quote = wx.StaticText(panel, label= 'Your quote: ', pos= (0, 30))
-        vbox.Add(self.quote, 1, wx.ALL|wx.EXPAND, 10)
-        # self.text_ctrl = wx.TextCtrl(panel, size=(size[0]/2,40), pos=(100, 30), style=wx.TE_MULTILINE)
-        # self.text_ctrl.Bind(wx.EVT_TEXT_ENTER, self.OnEnterPressed)
-        
-        b1 = wx.Button(panel, label="Btn1")
-        vbox.Add(b1, 0, wx.EXPAND)
+        self.panel = wx.Panel(self)
+        self.vbox = wx.BoxSizer(wx.VERTICAL)
+        self.hbox = wx.BoxSizer(wx.VERTICAL)
+        self.static_text()
+        self.text = self.text_ctrl()
 
-        hbox = wx.BoxSizer(wx.HORIZONTAL)
-        b3 = wx.Button(panel, label = "Btn3")
-        hbox.Add(b3, 0, wx.ALL|wx.EXPAND)
 
+        # play button
+        play_button = wx.Button(self.panel, label="Play", pos=(100,180))
+        self.vbox.Add(play_button, 0, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.play_text, play_button)
+
+
+        # clear button
+        clear_button = wx.Button(self.panel, label="Clear", pos=(200,180))
+        self.vbox.Add(clear_button, 0, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.clear_text, clear_button) 
+
+
+        # this button is for opening the text file
+        text_button = wx.Button(self.panel, label="Open and Play", pos=(100,250))
+        self.vbox.Add(text_button, 0, wx.EXPAND)
+        self.Bind(wx.EVT_BUTTON, self.open_file, text_button)
+        self.line_text = self.text_ctrl()
+        self.number_text = self.static_text(label="enter the line to read from:", 
+                                            pos=(200, 255)
+                                        )
+
+        self.numberText = self.text_ctrl(size=(40,20), pos=(345, 250), style=wx.TE_PROCESS_ENTER)
+       
         self.Show(True)
 
+    def static_text(self, label= 'Your text to play', pos=(0,30)):
+        quote = wx.StaticText(self.panel, label=label, pos= pos)
+        return (quote)
 
-    def OnEnterPressed(self,event): 
-        print ("Enter pressed")
-        text = self.text_ctrl.GetValue()
+
+    def text_ctrl(self, size=(240, 140), pos=(100, 30), 
+                    style=wx.TE_MULTILINE,
+                    value=''
+                ):
+        text = wx.TextCtrl(self.panel, size=size, pos=pos,
+                            style=style,
+                            value=value
+                        )
+        return (text)
+    
+
+    def clear_text(self, event):
+        return (self.text.SetValue(""))
+
+
+    def open_file(self, event):
+        """ Open a file"""
+        if (self.numberText.GetValue()):
+            line_number = eval(self.numberText.GetValue())
+        else:
+            line_number = 0
+        print("line number:   ", self.numberText.GetValue())
+        self.dirname = ''
+        self.open_file_text = ''
+        dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.*", wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.filename = dlg.GetFilename()
+            self.dirname = dlg.GetDirectory()
+            f = open(os.path.join(self.dirname, self.filename), 'r')
+            self.open_file_text = f.read(line_number)
+            run(self.open_file_text)
+            # self.control.SetValue(f.read())
+            f.close()
+        dlg.Destroy()
+
+
+    def play_text(self,event):
+        text = self.text.GetValue()
         run(text)
-
-
 
 
 app = wx.App(False)
